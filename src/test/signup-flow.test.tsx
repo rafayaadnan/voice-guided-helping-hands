@@ -53,13 +53,13 @@ describe("Welcome", () => {
     expect(screen.getByRole("button", { name: "I am a volunteer" })).toBeInTheDocument();
   });
 
-  it("Sign up opens Start with the heading 'Sign up as'; volunteer shows 'coming next' with Back", () => {
+  it("Sign up opens Start with the heading 'Sign up as'; volunteer shows the sign-up chat with Back", () => {
     render(<Prototype />);
     click("Sign up");
     expect(title()).toBe("Sign up as");
     click("I am a volunteer");
     expect(title()).toBe("Volunteer sign-up");
-    expect(screen.getAllByText("Volunteer sign-up coming next").length).toBeGreaterThan(0);
+    expect(screen.getByText("What nickname should people see?")).toBeTruthy();
     const backs = screen.getAllByRole("button", { name: "Back" });
     fireEvent.click(backs[backs.length - 1]!);
     expect(title()).toBe("Sign up as");
