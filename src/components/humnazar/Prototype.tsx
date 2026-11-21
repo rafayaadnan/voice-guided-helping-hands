@@ -37,10 +37,10 @@ import {
   type Anim, type AskOpts, type Ctx, type HearOpts, type HearResult, type Mic, type Mode, type Request, type Say, type ScreenId, type ScreenVoice, type Session, type VoiceState,
 } from "./context";
 import { ArmHint, ConfirmBtn, ListenRow, MicLine, MicStatusLine, useScreenAsk, VoiceRow } from "./voice";
-import { Btn, Camera, Icon, Notice, StatusCard, Tip, Toggle } from "./ui";
+import { Btn, Camera, Chip, Icon, Notice, StatusCard, Tip, Toggle } from "./ui";
 
 const IMG: Record<SampleItemId, string> = { spice: spiceImg, medicine: medicineImg, shirt: shirtImg, bill: billImg };
-const VOLUNTEER_SCREENS: ScreenId[] = ["WEL", "A", "VS", "V1", "V2x", "V3", "V5", "VM", "VT"];
+const VOLUNTEER_SCREENS: ScreenId[] = ["WEL", "A", "VS", "VL", "V1", "V2x", "V3", "V5", "VM", "VT"];
 const HOME: ScreenId[] = ["A", "L", "B"];
 
 const freshRequest = (): Request => ({ number: null, photo: null, widened: false, volunteerId: null });
@@ -951,6 +951,7 @@ function WhatsApp() {
   return (
     <Frame title={t.V1_title} caption={t.V1_cap} actions={<Btn onClick={join}>{t.V1_join}</Btn>}>
       <div className="hz-mb"><small>{t.V1_from}</small>{t.V1_msg}<small>{t.V1_time}</small></div>
+      <div className="hz-card"><small>{t.V1_sms}</small></div>
     </Frame>
   );
 }
@@ -975,6 +976,7 @@ function VolunteerRule() {
       </>}>
       <p className="hz-ru">{t.V3_rule}</p>
       {t.V3_no.map((x) => <Tip key={x} icon="x" no>{x}</Tip>)}
+      <p>{t.V3_link}</p>
     </Frame>
   );
 }
@@ -1021,17 +1023,154 @@ function ThankYou() {
   );
 }
 
+const SU_LANGS = ["Urdu", "English", "Punjabi", "Sindhi", "Pashto", "Saraiki", "Balochi"];
+const SU_FREE = ["Morning", "Afternoon", "Evening", "Late night", "Weekends"];
+const SU_RULES = ["No medicine dose advice", "No PINs or OTPs", "No legal or money advice", "No guiding on stairs or roads", "Not for emergencies"];
+type SuStep = { q: string; kind: "text" | "multi" | "single" | "rules"; opts?: string[]; reply?: string };
+const SU_STEPS: SuStep[] = [
+  { q: "What nickname should people see?", kind: "text" },
+  { q: "Which languages can you help in? Pick all that apply.", kind: "multi", opts: SU_LANGS },
+  { q: "When are you usually free?", kind: "multi", opts: SU_FREE },
+  { q: "How should we contact you?", kind: "single", opts: ["WhatsApp", "SMS", "App notification"] },
+  { q: "Are you 18 or older?", kind: "single", opts: ["Yes", "No"] },
+  { q: "Please send a photo of your CNIC for ID verification. It is never shown to the people you help.", kind: "single", opts: ["Send CNIC photo (sample)"], reply: "CNIC photo sent (sample)" },
+  { q: "Describe what you see. Don’t decide for them.", kind: "rules", opts: ["I accept"] },
+  { q: "Your gender (used for matching only)", kind: "single", opts: ["Woman", "Man", "Prefer not to say"] },
+  { q: "Who would you like to help?", kind: "single", opts: ["Anyone", "Women only", "Men only"] },
+  { q: "Send me requests?", kind: "single", opts: ["Yes, send me requests"] },
+];
+const SU_AGE = 4;
+const SU_LAST = SU_STEPS.length - 1;
+const toggleIn = (set: (fn: (x: string[]) => string[]) => void, v: string) =>
+  set((x) => (x.includes(v) ? x.filter((i) => i !== v) : [...x, v]));
+const rowStyle = { display: "flex", flexWrap: "wrap", gap: 8 } as const;
+
 function VolunteerSignup() {
-  const { t, back } = useP();
+  const { t, go } = useP();
+  const [step, setStep] = useState(0);
+  const [replies, setReplies] = useState<string[]>([]);
+  const [nick, setNick] = useState("Sana (sample)");
+  const [pick, setPick] = useState<string[]>([]);
+  const endRef = useRef<HTMLDivElement>(null);
+  const goRef = useRef(go);
+  goRef.current = go;
+  const sorry = replies[SU_AGE] === "No";
+  useEffect(() => { endRef.current?.scrollIntoView?.({ block: "end" }); }, [step, sorry]);
+  useEffect(() => {
+    if (!sorry) return;
+    const id = window.setTimeout(() => goRef.current("WEL", { reset: ["WEL"], anim: "back" }), 2500);
+    return () => window.clearTimeout(id);
+  }, [sorry]);
+
+  const answer = (text: string) => {
+    if (step === SU_LAST) { go("VL"); return; }
+    setReplies((r) => [...r, text]);
+    setPick([]);
+    setStep((n) => n + 1);
+  };
+  const cur = SU_STEPS[step];
+  const showControls = !sorry && !!cur && replies.length === step;
+  const mine = { alignSelf: "flex-end", background: "var(--hz-at)", borderEndStartRadius: 16, borderEndEndRadius: 4 } as const;
+  const bot = (i: number) => {
+    const q = SU_STEPS[i];
+    if (!q) return null;
+    if (q.kind !== "rules") return <div key={`q${i}`} className="hz-mb" style={{ alignSelf: "flex-start" }}>{q.q}</div>;
+    return (
+      <div key={`q${i}`} className="hz-card" style={{ alignSelf: "flex-start", maxWidth: "92%" }}>
+        <div className="hz-ru">{q.q}</div>
+        {SU_RULES.map((x) => <Tip key={x} icon="x" no>{x}</Tip>)}
+        <small>If these rules change, we will ask you to accept again.</small>
+      </div>
+    );
+  };
+
   return (
-    <Frame title={t.VS_title} caption={t.VS_cap} actions={<Btn onClick={back}>{t.back}</Btn>}>
-      <Notice v="i" icon="in" title={t.VS_cap} />
+    <Frame title={t.VS_title} caption={t.VS_cap}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {SU_STEPS.slice(0, step + 1).map((_, i) => (
+          <div key={i} style={{ display: "contents" }}>
+            {bot(i)}
+            {i < replies.length && <div className="hz-mb" style={mine}>{replies[i]}</div>}
+          </div>
+        ))}
+        {sorry && <div className="hz-mb" style={{ alignSelf: "flex-start" }}>Sorry, volunteers must be 18 or older.</div>}
+        {showControls && cur.kind === "text" && (
+          <>
+            <input type="text" aria-label={cur.q} value={nick} onChange={(e) => setNick(e.target.value)}
+              style={{ boxSizing: "border-box", width: "100%", minHeight: 56, padding: "8px 16px", border: "2px solid var(--hz-n500)", borderRadius: 12, font: "18px/24px var(--font-sans)" }} />
+            <Btn disabled={!nick.trim()} onClick={() => answer(nick.trim())}>Send</Btn>
+          </>
+        )}
+        {showControls && cur.kind === "multi" && (
+          <>
+            <div role="group" aria-label={cur.q} style={rowStyle}>
+              {cur.opts?.map((o) => <Chip key={o} on={pick.includes(o)} onClick={() => toggleIn(setPick, o)}>{o}</Chip>)}
+            </div>
+            <Btn disabled={pick.length === 0} onClick={() => answer(pick.join(", "))}>Send</Btn>
+          </>
+        )}
+        {showControls && (cur.kind === "single" || cur.kind === "rules") &&
+          cur.opts?.map((o) => <Btn key={o} onClick={() => answer(cur.reply ?? o)}>{o}</Btn>)}
+        <div ref={endRef} />
+      </div>
+    </Frame>
+  );
+}
+
+const SU_SLOTS = ["Weekday mornings", "Weekday evenings", "Late nights", "Weekends"];
+const SU_MONTH = ["1–2", "3–5", "6–10"];
+const SU_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const SU_STATUS = ["Free", "Busy", "Stop"];
+
+function VolunteerLimits() {
+  const { go } = useP();
+  const [slots, setSlots] = useState<string[]>([]);
+  const [month, setMonth] = useState("3–5");
+  const [quiet, setQuiet] = useState<string[]>([]);
+  const [calls, setCalls] = useState(2);
+  const [status, setStatus] = useState("Free");
+  return (
+    <Frame title="You can change these anytime" caption="Your limits"
+      actions={<Btn onClick={() => go("V1")}>Save and see a sample request</Btn>}>
+      <div>
+        <div className="hz-lbl">Weekly slots</div>
+        <div role="group" aria-label="Weekly slots" style={rowStyle}>
+          {SU_SLOTS.map((o) => <Chip key={o} on={slots.includes(o)} onClick={() => toggleIn(setSlots, o)}>{o}</Chip>)}
+        </div>
+      </div>
+      <div>
+        <div className="hz-lbl">Requests per month</div>
+        <div role="radiogroup" aria-label="Requests per month" style={rowStyle}>
+          {SU_MONTH.map((o) => <Chip key={o} on={month === o} onClick={() => setMonth(o)}>{o}</Chip>)}
+        </div>
+      </div>
+      <div>
+        <div className="hz-lbl">Quiet days</div>
+        <div role="group" aria-label="Quiet days" style={rowStyle}>
+          {SU_DAYS.map((o) => <Chip key={o} on={quiet.includes(o)} onClick={() => toggleIn(setQuiet, o)}>{o}</Chip>)}
+        </div>
+      </div>
+      <div>
+        <div className="hz-lbl">Calls from the same friend per week</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <button type="button" className="hz-bt hz-s" style={{ width: 56 }} aria-label="Fewer calls" disabled={calls <= 1} onClick={() => setCalls((n) => n - 1)}>−</button>
+          <span className="hz-ru" aria-live="polite">{calls}</span>
+          <button type="button" className="hz-bt hz-s" style={{ width: 56 }} aria-label="More calls" disabled={calls >= 7} onClick={() => setCalls((n) => n + 1)}>+</button>
+        </div>
+      </div>
+      <div>
+        <div className="hz-lbl">Status</div>
+        <div role="radiogroup" aria-label="Status" style={rowStyle}>
+          {SU_STATUS.map((o) => <Chip key={o} on={status === o} onClick={() => setStatus(o)}>{o}</Chip>)}
+        </div>
+        <p>You can also reply Busy, Free or Stop in WhatsApp.</p>
+      </div>
     </Frame>
   );
 }
 
 const SCREENS: Record<ScreenId, () => ReactNode> = {
-  WEL: Welcome, VS: VolunteerSignup, S2: SetupTerms, S3: SetupVerify, S4: SetupGender, S5: SetupDone,
+  WEL: Welcome, VS: VolunteerSignup, VL: VolunteerLimits, S2: SetupTerms, S3: SetupVerify, S4: SetupGender, S5: SetupDone,
   A: StartScreen, L: ChooseLanguage, B: Home, D: ChooseHelpType, QP: QuickLookPhoto, F: HumanNeeded, Q: QuickLookAnswer,
   G: ChooseHelper, T: BeforeCall, H: Waiting, M: LiveCall, R: CallEnded, CD: RequestComplete,
   W: NoVolunteer, WA: WidenToAnyone, Y: AskLater, YC: AskLaterSent, YR: VoiceReply,
