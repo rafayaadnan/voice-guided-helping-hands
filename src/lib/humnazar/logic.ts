@@ -106,6 +106,10 @@ export type Role = "user" | "volunteer";
 export function afterLanguage(role: Role): "B" | "V1" {
   return role === "user" ? "B" : "V1";
 }
+/** After Choose language: in sign-up a blind user goes on to the terms (step 2); otherwise as before. */
+export function afterLanguageFor(role: Role, signup: boolean): "B" | "V1" | "S2" {
+  return signup && role === "user" ? "S2" : afterLanguage(role);
+}
 /** After Start: log in goes to Choose language for both roles; sign-up sends a volunteer to "coming next". */
 export function afterStart(signup: boolean, role: Role): "L" | "VS" {
   return signup && role === "volunteer" ? "VS" : "L";
