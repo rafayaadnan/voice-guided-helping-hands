@@ -1,4 +1,8 @@
-import type { Helper, Lang, SampleItemId } from "./logic";
+import type { Gender, Helper, Lang, SampleItemId } from "./logic";
+
+// Spoken inside the confirm line for "prefer not to say", and shown on the Gender screen.
+const S4_NONE_EN = "You can still use Humnazar. You will only be matched with volunteers who help anyone.";
+const S4_NONE_UR = "آپ پھر بھی ہم نظر استعمال کر سکتے ہیں۔ آپ کو صرف ان رضاکاروں سے ملایا جائے گا جو کسی کی بھی مدد کے لیے تیار ہیں۔";
 
 type Dict = typeof en;
 
@@ -249,6 +253,43 @@ const en = {
   YR_q: "Say play to hear the reply, or say Home.",
   L_selected: (l: Lang) => `${l === "ur" ? "Urdu" : "English"} selected. Say confirm to continue, or cancel.`,
   itemShort: { spice: "spice packet", medicine: "medicine strip", shirt: "shirt photo", bill: "gas bill" } as Record<SampleItemId, string>,
+  // Welcome and sign-up
+  WEL_title: "Humnazar",
+  WEL_line: "Voice-first help from volunteers",
+  WEL_login: "Log in",
+  WEL_signup: "Sign up",
+  A_signupTitle: "Sign up as",
+  VS_title: "Volunteer sign-up",
+  VS_cap: "Volunteer sign-up coming next",
+  S_continue: "Continue",
+  setupStep: (n: number, total: number) => `Step ${n} of ${total}`,
+  S2_title: "Terms and disclaimer",
+  S2_h1: "What volunteers do",
+  S2_p1: "Humnazar connects you with volunteers who describe what they see. They describe; they do not decide for you.",
+  S2_h2: "Emergencies",
+  S2_p2: "Do not use Humnazar in an emergency.",
+  S2_h3: "Privacy",
+  S2_p3: "Your calls are not recorded.",
+  S2_q: "Say 'I accept' to continue, or 'read again'.",
+  S2_opts: "I accept, or read again",
+  S3_title: "Verification",
+  S3_cap: "To keep everyone safe, we verify you through a blind association, such as the Pakistan Association of the Blind. Say the name of your association. Then say your CNIC number. Your CNIC is never shown to volunteers.",
+  S3_qAssoc: "Say the name of your association.",
+  S3_qCnic: "Say your CNIC number.",
+  S3_qNext: "Say continue.",
+  S3_echoAssoc: (a: string) => `Association: ${a}.`,
+  S3_assocLabel: (a: string) => `Association: ${a} (sample)`,
+  S3_cnicLabel: "CNIC",
+  S3_done: "Verification submitted (sample). The association will confirm.",
+  S4_title: "Gender",
+  S4_cap: "Are you a woman, a man, or do you prefer not to say? This is used for matching only and is never shown to volunteers.",
+  S4_q: "Say woman, man, or prefer not to say.",
+  S4_opts: "woman, man, or prefer not to say",
+  S4_none: S4_NONE_EN,
+  genderLabel: { woman: "Woman", man: "Man", none: "Prefer not to say" } as Record<Gender, string>,
+  S5_title: "All set",
+  S5_cap: "Setup complete. Humnazar works with TalkBack and VoiceOver, with large buttons and high contrast. It needs Android 8 or later with 2 GB of RAM.",
+  S5_q: "Say continue to start.",
   cf: {
     needHelp: "You chose I need help. Say confirm to choose a type of help, or say cancel.",
     quick: "You chose Quick Look. Say confirm to take a photo, or say cancel.",
@@ -274,6 +315,12 @@ const en = {
     send: "You chose Send. Say confirm to send your question, or say cancel.",
     openReply: (n: string) => `You chose the reply from ${n}. Say confirm to open it, or say cancel.`,
     play: "You chose Play reply. Say confirm to listen to the voice note, or say cancel.",
+    signupNext: "You chose Continue. Say confirm to go to the next step, or say cancel.",
+    signupDone: "You chose Continue. Say confirm to go to Home, or say cancel.",
+    gender: (g: Gender) =>
+      g === "none"
+        ? `You chose prefer not to say. ${S4_NONE_EN} Say confirm to continue, or say cancel.`
+        : `You chose ${g}. Say confirm to continue, or say cancel.`,
   },
 };
 
@@ -522,6 +569,43 @@ const ur: Dict = {
   YR_q: "جواب سننے کے لیے «چلائیں» کہیں، یا «ہوم» کہیں۔",
   L_selected: (l: Lang) => `${l === "ur" ? "اردو منتخب ہو گئی" : "انگریزی منتخب ہو گئی"}۔ آگے بڑھنے کے لیے "تصدیق" کہیں، یا "منسوخ" کہیں۔`,
   itemShort: { spice: "مصالحے کا پیکٹ", medicine: "دوا کی پٹی", shirt: "قمیض کی تصویر", bill: "گیس کا بل" },
+  // Welcome and sign-up
+  WEL_title: "ہم نظر",
+  WEL_line: "رضاکاروں سے آواز کے ذریعے مدد",
+  WEL_login: "لاگ اِن",
+  WEL_signup: "سائن اپ",
+  A_signupTitle: "سائن اپ بطور",
+  VS_title: "رضاکار سائن اپ",
+  VS_cap: "رضاکار سائن اپ اگلے مرحلے میں آ رہا ہے",
+  S_continue: "جاری رکھیں",
+  setupStep: (n: number, total: number) => `مرحلہ ${n} از ${total}`,
+  S2_title: "شرائط اور دستبرداری",
+  S2_h1: "رضاکار کیا کرتے ہیں",
+  S2_p1: "ہم نظر آپ کو ایسے رضاکاروں سے ملاتا ہے جو بتاتے ہیں کہ وہ کیا دیکھ رہے ہیں۔ وہ بتاتے ہیں، آپ کی جگہ فیصلہ نہیں کرتے۔",
+  S2_h2: "ایمرجنسی",
+  S2_p2: "ایمرجنسی میں ہم نظر استعمال نہ کریں۔",
+  S2_h3: "رازداری",
+  S2_p3: "آپ کی کالز ریکارڈ نہیں ہوتیں۔",
+  S2_q: `آگے بڑھنے کے لیے "قبول ہے" کہیں، یا "دوبارہ" کہیں۔`,
+  S2_opts: "«قبول ہے» یا «دوبارہ»",
+  S3_title: "شناخت کی تصدیق",
+  S3_cap: "سب کی حفاظت کے لیے ہم آپ کی تصدیق نابینا افراد کی کسی انجمن کے ذریعے کرتے ہیں، جیسے پاکستان ایسوسی ایشن آف دی بلائنڈ۔ اپنی انجمن کا نام بولیں۔ پھر اپنا شناختی کارڈ نمبر بولیں۔ آپ کا شناختی کارڈ نمبر رضاکاروں کو کبھی نہیں دکھایا جاتا۔",
+  S3_qAssoc: "اپنی انجمن کا نام بولیں۔",
+  S3_qCnic: "اپنا شناختی کارڈ نمبر بولیں۔",
+  S3_qNext: "«جاری رکھیں» کہیں۔",
+  S3_echoAssoc: (a: string) => `انجمن: ${a}۔`,
+  S3_assocLabel: (a: string) => `انجمن: ${a} (نمونہ)`,
+  S3_cnicLabel: "شناختی کارڈ نمبر",
+  S3_done: "تصدیق جمع کر دی گئی (نمونہ)۔ انجمن اس کی تصدیق کرے گی۔",
+  S4_title: "جنس",
+  S4_cap: "کیا آپ خاتون ہیں، مرد ہیں، یا بتانا نہیں چاہتے؟ یہ صرف آپ کو رضاکاروں سے ملانے کے لیے استعمال ہوتا ہے اور رضاکاروں کو کبھی نہیں دکھایا جاتا۔",
+  S4_q: "«خاتون»، «مرد» یا «نہیں بتانا» کہیں۔",
+  S4_opts: "«خاتون»، «مرد» یا «نہیں بتانا»",
+  S4_none: S4_NONE_UR,
+  genderLabel: { woman: "خاتون", man: "مرد", none: "نہیں بتانا چاہتے" },
+  S5_title: "سب تیار ہے",
+  S5_cap: "سیٹ اپ مکمل ہو گیا۔ ہم نظر ٹاک بیک اور وائس اوور کے ساتھ کام کرتا ہے، بڑے بٹنوں اور ہائی کنٹراسٹ کے ساتھ۔ اس کے لیے اینڈرائیڈ 8 یا اس سے نیا ورژن اور 2 جی بی ریم درکار ہے۔",
+  S5_q: "شروع کرنے کے لیے «جاری رکھیں» کہیں۔",
   cf: {
     needHelp: `آپ نے مجھے مدد چاہیے کا انتخاب کیا ہے۔ مدد کی قسم منتخب کرنے کے لیے "تصدیق" کہیں، یا "منسوخ" کہیں۔`,
     quick: `آپ نے فوری نظر کا انتخاب کیا ہے۔ تصویر لینے کے لیے "تصدیق" کہیں، یا "منسوخ" کہیں۔`,
@@ -547,6 +631,12 @@ const ur: Dict = {
     send: `آپ نے بھیجیں کا انتخاب کیا ہے۔ اپنا سوال بھیجنے کے لیے "تصدیق" کہیں، یا "منسوخ" کہیں۔`,
     openReply: (n: string) => `آپ نے ${n} کے جواب کا انتخاب کیا ہے۔ اسے کھولنے کے لیے "تصدیق" کہیں، یا "منسوخ" کہیں۔`,
     play: `آپ نے جواب چلائیں کا انتخاب کیا ہے۔ آواز کا پیغام سننے کے لیے "تصدیق" کہیں، یا "منسوخ" کہیں۔`,
+    signupNext: `آپ نے جاری رکھیں کا انتخاب کیا ہے۔ اگلے مرحلے پر جانے کے لیے "تصدیق" کہیں، یا "منسوخ" کہیں۔`,
+    signupDone: `آپ نے جاری رکھیں کا انتخاب کیا ہے۔ ہوم پر جانے کے لیے "تصدیق" کہیں، یا "منسوخ" کہیں۔`,
+    gender: (g: Gender) =>
+      g === "none"
+        ? `آپ نے «نہیں بتانا» کا انتخاب کیا ہے۔ ${S4_NONE_UR} آگے بڑھنے کے لیے "تصدیق" کہیں، یا "منسوخ" کہیں۔`
+        : `آپ نے ${g === "woman" ? "خاتون" : "مرد"} کا انتخاب کیا ہے۔ آگے بڑھنے کے لیے "تصدیق" کہیں، یا "منسوخ" کہیں۔`,
   },
 };
 
