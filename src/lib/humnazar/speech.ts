@@ -46,6 +46,10 @@ let privateResults = false;
 export function setPrivateListening(on: boolean): void {
   privateResults = on;
 }
+/** True while the CNIC answer is being heard: screens must show the mask, never the heard text. */
+export function isPrivateListening(): boolean {
+  return privateResults;
+}
 
 /** Screens report what they did with a result: matched a command, or not. showText keeps "heard '…'" on a mismatch. */
 export function reportHeard(text: string, matched: boolean, showText = false): void {
