@@ -157,6 +157,7 @@ const en = {
   V1_msg: "A friend needs help. Tap to join.",
   V1_time: "10:32 (sample)",
   V1_join: "Tap to join",
+  V1_sms: "SMS backup (sample): “A friend needs help. Tap to join.” is sent if WhatsApp is not opened.",
 
   V2x_title: "Link no longer works",
   V2x_cap: "This link no longer works.",
@@ -166,6 +167,7 @@ const en = {
   V3_rule: "Describe what you see. Don’t decide for them.",
   V3_no: ["No medicine dose advice", "No PINs or OTPs", "No legal or money advice", "No guiding on stairs or roads"],
   V3_join: "Join",
+  V3_link: "This link works once, needs no login and expires in 3 minutes.",
   V3_cant: "Can’t help now",
 
   V5_title: "Decline reasons",
@@ -260,7 +262,7 @@ const en = {
   WEL_signup: "Sign up",
   A_signupTitle: "Sign up as",
   VS_title: "Volunteer sign-up",
-  VS_cap: "Volunteer sign-up coming next",
+  VS_cap: "Sign-up chat",
   S_continue: "Continue",
   setupStep: (n: number, total: number) => `Step ${n} of ${total}`,
   S2_title: "Terms and disclaimer",
@@ -475,6 +477,7 @@ const ur: Dict = {
   V1_msg: "ایک دوست کو مدد چاہیے۔ شامل ہونے کے لیے دبائیں۔",
   V1_time: "10:32 (نمونہ)",
   V1_join: "شامل ہونے کے لیے دبائیں",
+  V1_sms: "ایس ایم ایس بیک اپ (نمونہ): اگر واٹس ایپ نہ کھولا جائے تو “ایک دوست کو مدد چاہیے۔ شامل ہونے کے لیے دبائیں۔” بھیجا جاتا ہے۔",
 
   V2x_title: "لنک اب کام نہیں کرتا",
   V2x_cap: "یہ لنک اب کام نہیں کرتا۔",
@@ -484,6 +487,7 @@ const ur: Dict = {
   V3_rule: "جو نظر آئے وہ بیان کریں۔ ان کے لیے فیصلہ نہ کریں۔",
   V3_no: ["دوا کی خوراک کا مشورہ نہیں", "PIN یا OTP نہیں", "قانونی یا مالی مشورہ نہیں", "سیڑھیوں یا سڑکوں پر رہنمائی نہیں"],
   V3_join: "شامل ہوں",
+  V3_link: "یہ لنک صرف ایک بار کام کرتا ہے، اس کے لیے لاگ اِن نہیں چاہیے اور یہ 3 منٹ میں ختم ہو جاتا ہے۔",
   V3_cant: "ابھی مدد نہیں کر سکتا",
 
   V5_title: "انکار کی وجوہات",
@@ -576,7 +580,7 @@ const ur: Dict = {
   WEL_signup: "سائن اپ",
   A_signupTitle: "سائن اپ بطور",
   VS_title: "رضاکار سائن اپ",
-  VS_cap: "رضاکار سائن اپ اگلے مرحلے میں آ رہا ہے",
+  VS_cap: "سائن اپ چیٹ",
   S_continue: "جاری رکھیں",
   setupStep: (n: number, total: number) => `مرحلہ ${n} از ${total}`,
   S2_title: "شرائط اور دستبرداری",
