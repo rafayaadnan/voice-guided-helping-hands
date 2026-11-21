@@ -6,7 +6,8 @@ import type { CmdWord } from "@/lib/humnazar/voice-words";
 
 export type ScreenId =
   | "A" | "L" | "B" | "D" | "QP" | "F" | "Q" | "G" | "T" | "H" | "M" | "R" | "CD" | "W" | "WA"
-  | "Y" | "YC" | "YR" | "V1" | "V2x" | "V3" | "V5" | "VM" | "VT";
+  | "Y" | "YC" | "YR" | "V1" | "V2x" | "V3" | "V5" | "VM" | "VT"
+  | "WEL" | "VS" | "S2" | "S3" | "S4" | "S5";
 export type Anim = "fwd" | "back" | "fade";
 export type Mode = "quick" | "call" | "later";
 /** Builds text for one language; speech may use English when no Urdu voice is installed. */
@@ -20,6 +21,8 @@ export interface Request {
   volunteerId: string | null;
 }
 export interface Session {
+  /** True between Welcome > Sign up and the end of the blind-user setup. */
+  signup: boolean;
   role: Role;
   lang: Lang;
   helper: Helper | null;
