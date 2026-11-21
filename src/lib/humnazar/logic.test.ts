@@ -45,7 +45,7 @@ describe("Humnazar sample rules", () => {
   });
 });
 
-import { afterLanguage, afterStart, LISTEN_MS, MASKED_CNIC } from "./logic";
+import { afterLanguage, afterLanguageFor, afterStart, LISTEN_MS, MASKED_CNIC, SETUP_STEPS } from "./logic";
 
 describe("language is asked first", () => {
   it("a blind or low-vision user goes Home after choosing a language", () => {
@@ -71,5 +71,16 @@ describe("sign-up", () => {
   it("a CNIC is always shown as •••••-•••••••-• with no digits", () => {
     expect(MASKED_CNIC).toBe("•••••-•••••••-•");
     expect(MASKED_CNIC).not.toMatch(/\d/);
+  });
+});
+
+describe("blind-user sign-up path", () => {
+  it("after Choose language, sign-up goes to the terms and log in goes Home as before", () => {
+    expect(afterLanguageFor("user", true)).toBe("S2");
+    expect(afterLanguageFor("user", false)).toBe("B");
+    expect(afterLanguageFor("volunteer", false)).toBe("V1");
+  });
+  it("the setup has 5 steps", () => {
+    expect(SETUP_STEPS).toBe(5);
   });
 });
