@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type MutableRefObject, type ReactNode } from "react";
 
 import { MIC_LINE } from "@/lib/humnazar/i18n";
-import { LISTEN_MS } from "@/lib/humnazar/logic";
-import { getMic, getMicServer, listen, reportHeard, stopListening, subscribeMic } from "@/lib/humnazar/speech";
+import { LISTEN_MS, MASKED_CNIC } from "@/lib/humnazar/logic";
+import { getMic, getMicServer, isPrivateListening, listen, reportHeard, stopListening, subscribeMic } from "@/lib/humnazar/speech";
 import { parseBack, parseCmd, parseConfirm, type CmdWord } from "@/lib/humnazar/voice-words";
 import { useP, type AskOpts, type Say, type ScreenVoice } from "./context";
 import { Icon } from "./ui";
@@ -45,6 +45,9 @@ export function ArmHint({ id, listening }: { id: string; listening: boolean }) {
 }
 
 /* ---------- Screen question: speak caption + question, then listen ---------- */
+
+/** While the CNIC is being heard, the heard-text line shows the fixed mask instead of the words. */
+const shownHeard = (text: string) => (isPrivateListening() ? MASKED_CNIC : text);
 
 /** Returns the screen's ask(); Frame runs it when the screen opens and registers it for repeat and cancel. */
 export function useScreenAsk(voice: ScreenVoice | undefined, spoken: Say) {
@@ -100,13 +103,13 @@ export function useScreenAsk(voice: ScreenVoice | undefined, spoken: Say) {
       heardRetry: v0?.options ? (heard) => say((x, l) => x.heardSay(heard, vRef.current?.options?.(x, l) ?? "")) : undefined,
       quiet: v0?.quiet,
       onListen: (on) => { if (on) setMic({ s: "listening" }); },
-      onMiss: (heard) => setMic(heard ? { s: "heard", heard } : { s: "idle" }),
+      onMiss: (heard) => setMic(heard ? { s: "heard", heard: shownHeard(heard) } : { s: "idle" }),
     });
     if (r.s === "stop") { if (isCurrent(token)) setMic({ s: "idle" }); return; }
     if (r.s === "hit") {
       if (r.hit === "repeat") { void ask({ mode: "full" }); return; }
       if (r.hit === "back") { backRef.current(); return; }
-      setMic({ s: "heard", heard: r.text });
+      setMic({ s: "heard", heard: shownHeard(r.text) });
       r.hit.run();
       return;
     }
