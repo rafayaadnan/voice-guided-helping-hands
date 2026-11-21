@@ -4,29 +4,34 @@ import spiceImg from "@/assets/sample-spice-packet.jpg";
 import medicineImg from "@/assets/sample-medicine-strip.jpg";
 import shirtImg from "@/assets/sample-shirts.jpg";
 import billImg from "@/assets/sample-gas-bill.jpg";
-import { LANG_SCREEN, START_VOICE, STRINGS } from "@/lib/humnazar/i18n";
+import { LANG_SCREEN, START_VOICE, STRINGS, type Strings } from "@/lib/humnazar/i18n";
 import {
   acceptAtSecondsLeft,
   acceptingVolunteer,
   afterLanguage,
+  afterLanguageFor,
+  afterStart,
   ASK_LATER_REPLIER,
   canWiden,
   demoTickMs,
   formatSeconds,
   LISTEN_MS,
   makeRequestNumber,
+  MASKED_CNIC,
   matchingVolunteers,
   needsHuman,
   SAMPLE_ITEM_KIND,
+  SETUP_STEPS,
   USER_FIRST_NAME,
   volunteer,
   WAIT_SECONDS,
+  type Gender,
   type Helper,
   type Lang,
   type SampleItemId,
 } from "@/lib/humnazar/logic";
-import { cancelSpeech, closeScreen, hasUrduVoice, listen, openScreen, recognitionSupported, reportHeard, speak, stopListening } from "@/lib/humnazar/speech";
-import { parseCallEnded, parseConfirm, parseEndCall, parseHelper, parseHelperCmd, parseHelpType, parseNeedHelp, parseStartCall, parseLanguage, parsePhoto, parseRating, parseShowHide, parseStartRole, parseYesNo, spellRequestNumber, type HelpTypeWord } from "@/lib/humnazar/voice-words";
+import { cancelSpeech, closeScreen, hasUrduVoice, listen, openScreen, recognitionSupported, reportHeard, setPrivateListening, speak, stopListening } from "@/lib/humnazar/speech";
+import { parseAccept, parseCallEnded, parseConfirm, parseEndCall, parseFreeAnswer, parseGender, parseHelper, parseHelperCmd, parseHelpType, parseNeedHelp, parseStartCall, parseLanguage, parsePhoto, parseRating, parseShowHide, parseStartRole, parseYesNo, spellRequestNumber, type HelpTypeWord } from "@/lib/humnazar/voice-words";
 import {
   PrototypeContext, useP,
   type Anim, type AskOpts, type Ctx, type HearOpts, type HearResult, type Mic, type Mode, type Request, type Say, type ScreenId, type ScreenVoice, type Session, type VoiceState,
@@ -35,12 +40,13 @@ import { ArmHint, ConfirmBtn, ListenRow, MicLine, MicStatusLine, useScreenAsk, V
 import { Btn, Camera, Icon, Notice, StatusCard, Tip, Toggle } from "./ui";
 
 const IMG: Record<SampleItemId, string> = { spice: spiceImg, medicine: medicineImg, shirt: shirtImg, bill: billImg };
-const VOLUNTEER_SCREENS: ScreenId[] = ["A", "V1", "V2x", "V3", "V5", "VM", "VT"];
+const VOLUNTEER_SCREENS: ScreenId[] = ["WEL", "A", "VS", "V1", "V2x", "V3", "V5", "VM", "VT"];
 const HOME: ScreenId[] = ["A", "L", "B"];
 
 const freshRequest = (): Request => ({ number: null, photo: null, widened: false, volunteerId: null });
 
 const initialSession: Session = {
+  signup: false,
   role: "user",
   lang: "en",
   helper: "friend",
@@ -125,8 +131,9 @@ const vName = (id: string | null, lang: Lang) => (id ? volunteer(id).name[lang] 
 const START_ROUNDS = 3;
 
 function StartScreen() {
-  const { t, go, set, say, begin, isCurrent, registerScreen, voiceRef, markVoiceOff, markBlocked, markVoiceOk } = useP();
-  const choose = useCallback((role: "user" | "volunteer") => { set((s) => ({ ...s, role })); go("L"); }, [set, go]);
+  const { t, s, go, set, say, begin, isCurrent, registerScreen, voiceRef, markVoiceOff, markBlocked, markVoiceOk } = useP();
+  const signup = s.signup;
+  const choose = useCallback((role: "user" | "volunteer") => { set((x) => ({ ...x, role })); go(afterStart(signup, role)); }, [set, go, signup]);
 
   const ask = useCallback(async (): Promise<void> => {
     const token = begin();
@@ -174,7 +181,7 @@ function StartScreen() {
   }, [ask, registerScreen]);
 
   return (
-    <Frame noBack hideCap title={t.A_title}
+    <Frame noBack hideCap title={signup ? t.A_signupTitle : t.A_title}
       strip={<>
         <Icon n="sp" s={20} />
         <span dir="ltr" lang="en"><b>{START_VOICE.readsAloud}</b> {START_VOICE.prompt.en}</span>
@@ -199,15 +206,17 @@ function ChooseLanguage() {
   const both = async (k: "prompt" | "retry") => {
     // Blind users hear "Say back to go back." at the end of the prompt, in each language.
     const hint = (l: Lang) => (k === "prompt" && blindUser ? ` ${STRINGS[l].backHint}` : "");
-    const ok = await say(() => LANG_SCREEN[k].en + hint("en"), "en");
+    // In sign-up the prompt starts with "Step 1 of 5", in each language.
+    const step = (l: Lang) => (k === "prompt" && s.signup ? `${STRINGS[l].setupStep(1, SETUP_STEPS)}${l === "ur" ? "۔" : "."} ` : "");
+    const ok = await say(() => step("en") + LANG_SCREEN[k].en + hint("en"), "en");
     if (!ok || !hasUrduVoice()) return ok;
-    return say(() => LANG_SCREEN[k].ur + hint("ur"), "ur");
+    return say(() => step("ur") + LANG_SCREEN[k].ur + hint("ur"), "ur");
   };
   const choose = (l: Lang) => {
     setLang(l);
     // Volunteers choose by tap only: no spoken confirm step.
     if (!blindUser) { go(afterLanguage(s.role)); return; }
-    press(`lang-${l}`, (x) => x.L_selected(l), () => go(afterLanguage(s.role)), l);
+    press(`lang-${l}`, (x) => x.L_selected(l), () => go(afterLanguageFor(s.role, s.signup)), l);
   };
   const voice: ScreenVoice = {
     prompt: () => both("prompt"),
@@ -235,6 +244,12 @@ function ChooseLanguage() {
           <span dir="rtl" lang="ur"><b>{LANG_SCREEN.readsAloud.ur}</b> {LANG_SCREEN.prompt.ur}</span>
         </span>
       </>}>
+      {s.signup && (
+        <div className="hz-bi hz-step">
+          <span dir="ltr" lang="en">{STRINGS.en.setupStep(1, SETUP_STEPS)}</span>
+          <span dir="rtl" lang="ur">{STRINGS.ur.setupStep(1, SETUP_STEPS)}</span>
+        </div>
+      )}
       {opt("ur", LANG_SCREEN.urdu)}
       {opt("en", LANG_SCREEN.english)}
     </Frame>
@@ -794,6 +809,136 @@ function VoiceReply() {
   );
 }
 
+/* ---------- Welcome (tap only) ---------- */
+
+function Welcome() {
+  const { t, go, set } = useP();
+  const open = (signup: boolean) => { set((x) => ({ ...x, signup })); go("A"); };
+  return (
+    <Frame noBack hideCap title={t.WEL_title} strip={<></>}
+      actions={<>
+        <Btn large onClick={() => open(false)}>{t.WEL_login}</Btn>
+        <Btn large kind="s" onClick={() => open(true)}>{t.WEL_signup}</Btn>
+      </>}>
+      <p className="hz-wel">{t.WEL_line}</p>
+    </Frame>
+  );
+}
+
+/* ---------- Blind-user sign-up: step 1 is Choose language; steps 2 to 5 are below (sample data only) ---------- */
+
+function StepLine({ n }: { n: number }) {
+  const { t } = useP();
+  return <p className="hz-step">{t.setupStep(n, SETUP_STEPS)}</p>;
+}
+/** Every sign-up screen speaks its step line first. */
+const stepSay = (x: Strings, n: number, text: string) => `${x.setupStep(n, SETUP_STEPS)}. ${text}`;
+
+function SetupTerms() {
+  const { t, go } = useP();
+  const next = () => go("S3");
+  return (
+    <Frame title={t.S2_title} cap={(x) => stepSay(x, 2, `${x.S2_p1} ${x.S2_p2} ${x.S2_p3}`)}
+      voice={{ q: (x) => x.S2_q, options: (x) => x.S2_opts, parse: (x) => (parseAccept(x) ? next : null) }}>
+      <StepLine n={2} />
+      <div className="hz-terms">
+        <h2>{t.S2_h1}</h2>
+        <p>{t.S2_p1}</p>
+        <h2>{t.S2_h2}</h2>
+        <p>{t.S2_p2}</p>
+        <h2>{t.S2_h3}</h2>
+        <p>{t.S2_p3}</p>
+        <p className="q">{t.S2_q}</p>
+      </div>
+    </Frame>
+  );
+}
+
+/** Association first, then CNIC. The CNIC is never kept, shown, spoken back or logged: only the fixed mask is shown. */
+function SetupVerify() {
+  const { t, go, say, press, reask } = useP();
+  const [phase, setPhase] = useState<"assoc" | "cnic" | "done">("assoc");
+  const [assoc, setAssoc] = useState("");
+  const next = () => go("S4");
+
+  // While the CNIC is being heard the status lines show the mask; always switched off when leaving.
+  useEffect(() => {
+    setPrivateListening(phase === "cnic");
+    return () => setPrivateListening(false);
+  }, [phase]);
+  // After each answer: say what happened, then ask the next question.
+  useEffect(() => {
+    if (phase === "cnic") reask({ mode: "question", pre: (x) => x.S3_echoAssoc(assoc) });
+    if (phase === "done") reask({ mode: "question", pre: (x) => x.S3_done });
+  }, [phase, assoc, reask]);
+
+  const voice: ScreenVoice =
+    phase === "done"
+      ? { q: (x) => x.S3_qNext, cmds: { continue: () => press("s3-next", (x) => x.cf.signupNext, next) } }
+      : phase === "cnic"
+        ? { q: (x) => x.S3_qCnic, parse: (x) => (parseFreeAnswer(x) ? () => setPhase("done") : null) }
+        : {
+          retry: () => say((x) => `${x.notHeardQ} ${x.S3_qAssoc}`),
+          parse: (x) => {
+            const a = parseFreeAnswer(x);
+            return a ? () => { setAssoc(a); setPhase("cnic"); } : null;
+          },
+        };
+  return (
+    <Frame title={t.S3_title} cap={(x) => (phase === "assoc" ? stepSay(x, 3, x.S3_cap) : "")} voice={voice}
+      actions={<ConfirmBtn id="s3-next" msg={(x) => x.cf.signupNext} onConfirm={next} disabled={phase !== "done"}>{t.S_continue}</ConfirmBtn>}>
+      <StepLine n={3} />
+      <p className="hz-lead">{t.S3_cap}</p>
+      {assoc && <div className="hz-card">{t.S3_assocLabel(assoc)}</div>}
+      {phase === "done" && (
+        <>
+          <div className="hz-card">{t.S3_cnicLabel}: <span dir="ltr">{MASKED_CNIC}</span></div>
+          <div className="hz-fade-in"><Notice v="ok" icon="ck" title={t.S3_done} /></div>
+        </>
+      )}
+    </Frame>
+  );
+}
+
+function SetupGender() {
+  const { t, go, press, armed } = useP();
+  const next = () => go("S5");
+  const options: Gender[] = ["woman", "man", "none"];
+  return (
+    <Frame title={t.S4_title} cap={(x) => stepSay(x, 4, x.S4_cap)} hideMic
+      voice={{
+        q: (x) => x.S4_q,
+        options: (x) => x.S4_opts,
+        parse: (x) => {
+          const g = parseGender(x);
+          return g ? () => press(`gd-${g}`, (y) => y.cf.gender(g), next) : null;
+        },
+      }}>
+      <StepLine n={4} />
+      <p className="hz-lead">{t.S4_cap}</p>
+      <ListenRow />
+      {options.map((g) => (
+        <ConfirmBtn key={g} id={`gd-${g}`} cls="hz-bt hz-s" msg={(x) => x.cf.gender(g)} onConfirm={next}>{t.genderLabel[g]}</ConfirmBtn>
+      ))}
+      {armed === "gd-none" && <div className="hz-fade-in"><Notice v="i" icon="in">{t.S4_none}</Notice></div>}
+    </Frame>
+  );
+}
+
+function SetupDone() {
+  const { t, go, set, press } = useP();
+  // The language chosen in step 1 is already in the session, so Home opens in it.
+  const finish = () => { set((x) => ({ ...x, signup: false })); go("B", { reset: HOME, anim: "fade" }); };
+  return (
+    <Frame title={t.S5_title} cap={(x) => stepSay(x, 5, x.S5_cap)}
+      voice={{ q: (x) => x.S5_q, cmds: { continue: () => press("s5-next", (x) => x.cf.signupDone, finish) } }}
+      actions={<ConfirmBtn id="s5-next" msg={(x) => x.cf.signupDone} onConfirm={finish}>{t.S_continue}</ConfirmBtn>}>
+      <StepLine n={5} />
+      <p className="hz-lead">{t.S5_cap} {t.S5_q}</p>
+    </Frame>
+  );
+}
+
 /* ---------- Volunteer ---------- */
 
 function WhatsApp() {
@@ -876,7 +1021,17 @@ function ThankYou() {
   );
 }
 
+function VolunteerSignup() {
+  const { t, back } = useP();
+  return (
+    <Frame title={t.VS_title} caption={t.VS_cap} actions={<Btn onClick={back}>{t.back}</Btn>}>
+      <Notice v="i" icon="in" title={t.VS_cap} />
+    </Frame>
+  );
+}
+
 const SCREENS: Record<ScreenId, () => ReactNode> = {
+  WEL: Welcome, VS: VolunteerSignup, S2: SetupTerms, S3: SetupVerify, S4: SetupGender, S5: SetupDone,
   A: StartScreen, L: ChooseLanguage, B: Home, D: ChooseHelpType, QP: QuickLookPhoto, F: HumanNeeded, Q: QuickLookAnswer,
   G: ChooseHelper, T: BeforeCall, H: Waiting, M: LiveCall, R: CallEnded, CD: RequestComplete,
   W: NoVolunteer, WA: WidenToAnyone, Y: AskLater, YC: AskLaterSent, YR: VoiceReply,
@@ -890,7 +1045,7 @@ type Arm = { id: string; msg: Say; action: () => void; lang?: Lang | undefined; 
 
 export function Prototype() {
   const [s, setS] = useState<Session>(initialSession);
-  const [stack, setStack] = useState<ScreenId[]>(["A"]);
+  const [stack, setStack] = useState<ScreenId[]>(["WEL"]);
   const [anim, setAnim] = useState<Anim>("fade");
   const [navKey, setNavKey] = useState(0);
   const [confirm, setConfirm] = useState(false);
