@@ -311,4 +311,13 @@
   .hz-blind .hz-lang { min-height: 88px; font-size: 24px; line-height: 32px; }
   .hz-blind .hz-bt > svg { flex: none; }
   .hz-scrim.hz-blind .hz-bt { min-height: 72px; font-size: 20px; }
+
+  /* Welcome and blind-user sign-up */
+  .hz-wel { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; font: 700 28px/36px var(--font-sans); color: var(--hz-n900); }
+  .hz-step { font: 600 20px/28px var(--font-sans); color: var(--hz-n700); }
+  .hz-terms { display: flex; flex-direction: column; gap: 8px; }
+  .hz-terms h2 { margin: 8px 0 0; font: 700 24px/32px var(--font-sans); color: var(--hz-n900); }
+  .hz-terms p { font: 500 22px/32px var(--font-sans); color: var(--hz-n900); }
+  .hz-terms p.q { margin-top: 12px; font-weight: 700; color: var(--hz-a); }
+  .hz-ct p.hz-lead { font: 500 22px/32px var(--font-sans); color: var(--hz-n900); }
 }
